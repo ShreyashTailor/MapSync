@@ -1,0 +1,60 @@
+/* CSS Reset & Global Variables */
+:root {
+  --bg-color: #030509;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --accent: #14b8a6;
+  --accent-glow: rgba(20, 184, 166, 0.4);
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-border: rgba(30, 41, 59, 0.8);
+  
+  --radius-lg: 24px;
+  --radius-md: 16px;
+  --radius-sm: 8px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: var(--font-figtree), system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Global Leaflet Adjustments */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #030509 !important;
+  border-radius: var(--radius-lg);
+}
+
+.leaflet-control-container .leaflet-control {
+  border: 1px solid var(--glass-border) !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(10px);
+  color: var(--text-primary) !important;
+  border-radius: var(--radius-sm);
+}
+.leaflet-bar a {
+  background-color: transparent !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+}
+.leaflet-bar a:hover {
+  background-color: var(--accent) !important;
+  color: #fff !important;
+}
