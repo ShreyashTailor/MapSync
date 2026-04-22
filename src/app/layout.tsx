@@ -8,8 +8,11 @@ const figtree = Figtree({
 });
 
 export const metadata: Metadata = {
-  title: "San Andreas Map Interface",
-  description: "Dynamic GTA San Andreas map UI for generating location coordinates",
+  title: "MapSync",
+  description: "Dynamic GTA San Andreas map & GTA V Zone Selector Tool",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({

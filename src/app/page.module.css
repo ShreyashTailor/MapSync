@@ -125,32 +125,6 @@
   box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
-.copyButton {
-  background: #fff;
-  color: #000;
-  border: none;
-  padding: 0 3rem;
-  border-radius: var(--radius-md);
-  font-weight: 700;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
-}
-
-.copyButton:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(255, 255, 255, 0.2);
-}
-
-.copyButton:active {
-  transform: translateY(2px) scale(0.98);
-}
-
 .optionsPanel {
   background: var(--glass-bg);
   backdrop-filter: blur(20px);
@@ -212,6 +186,65 @@
   color: var(--text-primary);
 }
 
+.mapSwitcher {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.switchBtn {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  padding: 0.6rem 1.5rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.switchBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.activeSwitch {
+  background: var(--accent) !important;
+  color: #000 !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.copyButton {
+  background: #fff;
+  color: #000;
+  border: none;
+  padding: 0 3rem;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-shadow: 0 10px 30px rgba(255, 255, 255, 0.1);
+}
+
+.copyButton:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(255, 255, 255, 0.2);
+}
+
+.copyButton:active {
+  transform: translateY(2px) scale(0.98);
+}
+
 @keyframes fadeDown {
   to { opacity: 1; transform: translateY(0); }
 }
@@ -222,6 +255,65 @@
 
 @keyframes scaleIn {
   to { opacity: 1; transform: scale(1); }
+}
+
+/* Footer */
+.footer {
+  margin-top: 4rem;
+  padding: 2rem 0;
+  border-top: 1px solid var(--glass-border);
+  animation: fadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.6s forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.footerInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.footerAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  transition: all 0.3s ease;
+}
+
+.footerAvatar:hover {
+  border-color: var(--accent);
+  transform: scale(1.1);
+}
+
+.footerText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.footerCredit {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.footerCredit strong {
+  color: #fff;
+}
+
+.footerLink {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.footerLink:hover {
+  color: var(--accent);
 }
 
 /* Add responsive adjustments */

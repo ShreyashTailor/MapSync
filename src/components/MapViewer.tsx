@@ -1,25 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { MapContainer, ImageOverlay, useMapEvents, Rectangle, CircleMarker } from "react-leaflet";
+import { MapContainer, ImageOverlay, useMapEvents, Rectangle, CircleMarker, ZoomControl } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./MapViewer.module.css";
 
-// High-res Map from requested source
-const IMAGE_URL = "https://interactive-game-maps.github.io/grand_theft_auto_san_andreas/full_map.webp";
-const MAP_BOUNDS: L.LatLngBoundsExpression = [
-  [-3000, -3000],
-  [3000, 3000],
-];
+// Map configurations
+const MAPS = {
+  sa: {
+    url: "https://interactive-game-maps.github.io/grand_theft_auto_san_andreas/full_map.webp",
+    bounds: [[-3000, -3000], [3000, 3000]] as L.LatLngBoundsExpression,
+    minZoom: -3,
+    maxZoom: 4,
+    center: [0, 0] as L.LatLngExpression
+  },
+  v: {
+    // Local high-res satellite map for GTA V (downloaded to public/)
+    url: "/gtav_map.jpg",
+    bounds: [[-4000, -4000], [4000, 4000]] as L.LatLngBoundsExpression,
+    minZoom: -2,
+    maxZoom: 4,
+    center: [0, 0] as L.LatLngExpression
+  }
+};
+
+interface SelectionToolProps {
+  onSelectionConfirmed: (bounds: L.LatLngBounds | null) => void;
+  initialBounds: L.LatLngBounds | null;
+}
 
 function SelectionTool({ 
   onSelectionConfirmed, 
   initialBounds 
-}: { 
-  onSelectionConfirmed: (bounds: L.LatLngBounds | null) => void,
-  initialBounds: L.LatLngBounds | null
-}) {
+}: SelectionToolProps) {
   const [bbox, setBbox] = useState<L.LatLngBounds | null>(initialBounds);
   const [dragMode, setDragMode] = useState<'create' | 'move' | 'resize' | null>(null);
   const [dragStart, setDragStart] = useState<L.LatLng | null>(null);
@@ -41,15 +55,16 @@ function SelectionTool({
       if (!dragMode) return;
 
       if (dragMode === 'create' && dragStart) {
-        const newBounds = L.latLngBounds(dragStart, e.latlng);
-        setBbox(newBounds);
+        setBbox(L.latLngBounds(dragStart, e.latlng));
       } else if (dragMode === 'move' && dragStart) {
         const latDiff = e.latlng.lat - dragStart.lat;
         const lngDiff = e.latlng.lng - dragStart.lng;
         if (bbox) {
+          const sw = bbox.getSouthWest();
+          const ne = bbox.getNorthEast();
           const newBounds = L.latLngBounds(
-            [bbox.getSouth() + latDiff, bbox.getWest() + lngDiff],
-            [bbox.getNorth() + latDiff, bbox.getEast() + lngDiff]
+            [sw.lat + latDiff, sw.lng + lngDiff],
+            [ne.lat + latDiff, ne.lng + lngDiff]
           );
           setBbox(newBounds);
           setDragStart(e.latlng);
@@ -123,26 +138,33 @@ function SelectionTool({
 interface MapViewerProps {
   onSelection: (bounds: L.LatLngBounds | null) => void;
   currentSelection: L.LatLngBounds | null;
+  mapType: 'sa' | 'v';
 }
 
-export default function MapViewer({ onSelection, currentSelection }: MapViewerProps) {
+export default function MapViewer({ onSelection, currentSelection, mapType }: MapViewerProps) {
+  const config = MAPS[mapType];
+
   return (
     <div className={styles.mapWrapper}>
       <MapContainer
+        key={mapType} // Force re-mount on map switch
         crs={L.CRS.Simple}
-        center={[0, 0]}
-        zoom={0}
-        minZoom={-3}
-        maxZoom={4}
-        maxBounds={MAP_BOUNDS}
+        center={config.center}
+        zoom={mapType === 'sa' ? 0 : -1}
+        minZoom={config.minZoom}
+        maxZoom={config.maxZoom}
+        maxBounds={config.bounds}
         style={{ width: "100%", height: "100%", background: "#030509" }}
         className={styles.mapElement}
         scrollWheelZoom={true}
         dragging={true}
+        zoomControl={false}
+        zoomSnap={0}
       >
+        <ZoomControl position="bottomleft" />
         <ImageOverlay
-          url={IMAGE_URL}
-          bounds={MAP_BOUNDS}
+          url={config.url}
+          bounds={config.bounds}
           opacity={1}
           zIndex={10}
         />
