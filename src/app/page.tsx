@@ -53,7 +53,7 @@ export default function Dashboard() {
       </header>
 
       <div className={styles.mapWrapper}>
-        <MapViewer onSelection={setSelectedBounds} />
+        <MapViewer onSelection={setSelectedBounds} currentSelection={selectedBounds} />
       </div>
 
       <div className={styles.controlsPanel}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MapContainer, ImageOverlay, useMapEvents, Rectangle } from "react-leaflet";
+import { MapContainer, ImageOverlay, useMapEvents, Rectangle, CircleMarker } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import styles from "./MapViewer.module.css";
@@ -13,53 +13,119 @@ const MAP_BOUNDS: L.LatLngBoundsExpression = [
   [3000, 3000],
 ];
 
-interface BoundingBox {
-  start: L.LatLng;
-  end: L.LatLng;
-}
+function SelectionTool({ 
+  onSelectionConfirmed, 
+  initialBounds 
+}: { 
+  onSelectionConfirmed: (bounds: L.LatLngBounds | null) => void,
+  initialBounds: L.LatLngBounds | null
+}) {
+  const [bbox, setBbox] = useState<L.LatLngBounds | null>(initialBounds);
+  const [dragMode, setDragMode] = useState<'create' | 'move' | 'resize' | null>(null);
+  const [dragStart, setDragStart] = useState<L.LatLng | null>(null);
+  const [resizeCorner, setResizeCorner] = useState<string | null>(null);
 
-function SelectionTool({ onSelectionConfirmed }: { onSelectionConfirmed: (bounds: L.LatLngBounds) => void }) {
-  const [bbox, setBbox] = useState<BoundingBox | null>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-
-  useMapEvents({
+  const map = useMapEvents({
     mousedown(e) {
       if ((e.originalEvent as MouseEvent).button !== 0) return;
-      // Disable map dragging so we can draw the rectangle
-      e.target.dragging.disable();
-      setIsDrawing(true);
-      setBbox({ start: e.latlng, end: e.latlng });
+      
+      // If clicking outside existing box, start 'create' mode
+      if (!bbox || !bbox.contains(e.latlng)) {
+        setDragMode('create');
+        setDragStart(e.latlng);
+        setBbox(L.latLngBounds(e.latlng, e.latlng));
+        map.dragging.disable();
+      }
     },
     mousemove(e) {
-      if (!isDrawing || !bbox) return;
-      setBbox({ ...bbox, end: e.latlng });
+      if (!dragMode) return;
+
+      if (dragMode === 'create' && dragStart) {
+        const newBounds = L.latLngBounds(dragStart, e.latlng);
+        setBbox(newBounds);
+      } else if (dragMode === 'move' && dragStart) {
+        const latDiff = e.latlng.lat - dragStart.lat;
+        const lngDiff = e.latlng.lng - dragStart.lng;
+        if (bbox) {
+          const newBounds = L.latLngBounds(
+            [bbox.getSouth() + latDiff, bbox.getWest() + lngDiff],
+            [bbox.getNorth() + latDiff, bbox.getEast() + lngDiff]
+          );
+          setBbox(newBounds);
+          setDragStart(e.latlng);
+        }
+      } else if (dragMode === 'resize' && resizeCorner && bbox) {
+        let sw = bbox.getSouthWest();
+        let ne = bbox.getNorthEast();
+        
+        if (resizeCorner === 'nw') { ne = L.latLng(e.latlng.lat, ne.lng); sw = L.latLng(sw.lat, e.latlng.lng); }
+        if (resizeCorner === 'ne') { ne = e.latlng; }
+        if (resizeCorner === 'sw') { sw = e.latlng; }
+        if (resizeCorner === 'se') { sw = L.latLng(e.latlng.lat, sw.lng); ne = L.latLng(ne.lat, e.latlng.lng); }
+        
+        setBbox(L.latLngBounds(sw, ne));
+      }
     },
-    mouseup(e) {
-      if (!isDrawing || !bbox) return;
-      setIsDrawing(false);
-      // Re-enable map dragging
-      e.target.dragging.enable();
-      setBbox({ ...bbox, end: e.latlng });
-      const finalBounds = L.latLngBounds(bbox.start, e.latlng);
-      onSelectionConfirmed(finalBounds);
+    mouseup() {
+      if (dragMode) {
+        onSelectionConfirmed(bbox);
+        setDragMode(null);
+        setDragStart(null);
+        setResizeCorner(null);
+        map.dragging.enable();
+      }
     },
   });
 
   if (!bbox) return null;
 
+  const corners = {
+    nw: [bbox.getNorth(), bbox.getWest()],
+    ne: [bbox.getNorth(), bbox.getEast()],
+    sw: [bbox.getSouth(), bbox.getWest()],
+    se: [bbox.getSouth(), bbox.getEast()],
+  };
+
   return (
-    <Rectangle
-      bounds={L.latLngBounds(bbox.start, bbox.end)}
-      pathOptions={{ color: "#14b8a6", weight: 3, fillOpacity: 0.2 }}
-    />
+    <>
+      <Rectangle
+        bounds={bbox}
+        pathOptions={{ color: "#14b8a6", weight: 2, fillOpacity: 0.15, dashArray: '5, 5' }}
+        eventHandlers={{
+          mousedown: (e) => {
+            if (e.originalEvent) e.originalEvent.stopPropagation();
+            setDragMode('move');
+            setDragStart(e.latlng);
+            map.dragging.disable();
+          }
+        }}
+      />
+      {Object.entries(corners).map(([key, pos]) => (
+        <CircleMarker
+          key={key}
+          center={pos as L.LatLngExpression}
+          radius={6}
+          pathOptions={{ color: "#fff", fillColor: "#14b8a6", fillOpacity: 1, weight: 2 }}
+          eventHandlers={{
+            mousedown: (e) => {
+              if (e.originalEvent) e.originalEvent.stopPropagation();
+              setDragMode('resize');
+              setResizeCorner(key);
+              map.dragging.disable();
+            }
+          }}
+        />
+      ))}
+    </>
   );
 }
 
 interface MapViewerProps {
   onSelection: (bounds: L.LatLngBounds | null) => void;
+  currentSelection: L.LatLngBounds | null;
 }
 
-export default function MapViewer({ onSelection }: MapViewerProps) {
+export default function MapViewer({ onSelection, currentSelection }: MapViewerProps) {
   return (
     <div className={styles.mapWrapper}>
       <MapContainer
@@ -80,7 +146,10 @@ export default function MapViewer({ onSelection }: MapViewerProps) {
           opacity={1}
           zIndex={10}
         />
-        <SelectionTool onSelectionConfirmed={onSelection} />
+        <SelectionTool 
+          onSelectionConfirmed={onSelection} 
+          initialBounds={currentSelection}
+        />
       </MapContainer>
       
       <div className={styles.instructionOverlay}>
