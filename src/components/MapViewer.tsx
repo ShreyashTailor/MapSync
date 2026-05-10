@@ -143,17 +143,24 @@ interface MapViewerProps {
 
 export default function MapViewer({ onSelection, currentSelection, mapType }: MapViewerProps) {
   const config = MAPS[mapType];
+  const [mousePos, setMousePos] = useState<L.LatLng | null>(null);
+
+  // Helper to handle coordinate changes from manual input
+  const handleManualInput = (key: string, value: string) => {
+    if (!currentSelection) return;
+    const val = parseFloat(value);
+    if (isNaN(val)) return;
+  };
 
   return (
     <div className={styles.mapWrapper}>
       <MapContainer
         key={mapType} // Force re-mount on map switch
         crs={L.CRS.Simple}
-        center={config.center}
+        center={[0, 0]}
         zoom={mapType === 'sa' ? 0 : -1}
         minZoom={config.minZoom}
         maxZoom={config.maxZoom}
-        maxBounds={config.bounds}
         style={{ width: "100%", height: "100%", background: "#030509" }}
         className={styles.mapElement}
         scrollWheelZoom={true}
@@ -162,12 +169,18 @@ export default function MapViewer({ onSelection, currentSelection, mapType }: Ma
         zoomSnap={0}
       >
         <ZoomControl position="bottomleft" />
+        <CoordinateTracker onMouseMove={setMousePos} />
+        
         <ImageOverlay
           url={config.url}
           bounds={config.bounds}
           opacity={1}
           zIndex={10}
         />
+
+        {/* Origin Crosshair for calibration */}
+        <div className={styles.originMarker}></div>
+
         <SelectionTool 
           onSelectionConfirmed={onSelection} 
           initialBounds={currentSelection}
@@ -178,6 +191,19 @@ export default function MapViewer({ onSelection, currentSelection, mapType }: Ma
         <span className={styles.pulseDot}></span>
         <span>Drag map to pan. Click and drag to select an area.</span>
       </div>
+
+      <div className={styles.coordDisplay}>
+        {mousePos ? `X: ${mousePos.lng.toFixed(1)} Y: ${mousePos.lat.toFixed(1)}` : 'Hover map for coords'}
+      </div>
     </div>
   );
+}
+
+function CoordinateTracker({ onMouseMove }: { onMouseMove: (pos: L.LatLng) => void }) {
+  useMapEvents({
+    mousemove: (e) => {
+      onMouseMove(e.latlng);
+    }
+  });
+  return null;
 }
